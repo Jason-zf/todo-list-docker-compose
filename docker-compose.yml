@@ -1,0 +1,103 @@
+version: "3.3"
+services:
+  config-server:
+    image: bfzheng/config-server
+    networks: 
+      todo:
+        aliases:
+          - config-server
+    ports:
+      - 8888:8888
+    # restart: always
+    deploy:
+      replicas: 1
+      restart_policy: 
+        condition: on-failure
+        delay: 10s
+  db:
+    image: mysql:5.5.61
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    networks: 
+      todo:
+        aliases: 
+          - db
+    ports:
+      - 3306:3306 
+    # restart: always
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+  user-service:
+    image: bfzheng/user-service
+    networks: 
+      todo:
+        aliases: 
+          - user-service
+    ports:
+      - 8082:8082
+    depends_on:
+      - config-server
+      - db
+    # restart: always
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  todo-service:
+    image: bfzheng/todo-service
+    networks: 
+      todo:
+        aliases:      
+          - todo-service
+    ports:
+      - 8080:8080
+    depends_on:
+      - config-server
+      - db
+    # restart: always
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  zuul-proxy:
+    image: bfzheng/zuul-proxy
+    networks: 
+      todo:
+        aliases:
+          - zuul-proxy
+    ports:
+      - 8088:8088
+    depends_on:
+      - config-server
+      - user-service
+      - todo-service
+    # restart: always
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+  web-app:
+    image: bfzheng/web-app
+    networks: 
+      todo:
+        aliases:
+          - web-app
+    ports:
+      - 80:80
+    depends_on:
+      - zuul-proxy
+    deploy:
+      replicas: 1
+      restart_policy: 
+        condition: on-failure
+        delay: 10s
+networks: 
+  todo:       
