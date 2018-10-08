@@ -8,7 +8,6 @@ services:
           - config-server
     ports:
       - 8888:8888
-    # restart: always
     deploy:
       replicas: 1
       restart_policy: 
@@ -24,7 +23,6 @@ services:
           - db
     ports:
       - 3306:3306 
-    # restart: always
     deploy:
       placement:
         constraints: [node.role == manager]
@@ -39,14 +37,11 @@ services:
     depends_on:
       - config-server
       - db
-    # restart: always
     deploy:
       replicas: 1
-      update_config:
-        parallelism: 2
-        delay: 10s
       restart_policy:
         condition: on-failure
+        delay: 10s
   todo-service:
     image: bfzheng/todo-service
     networks: 
@@ -58,14 +53,11 @@ services:
     depends_on:
       - config-server
       - db
-    # restart: always
     deploy:
       replicas: 1
-      update_config:
-        parallelism: 2
-        delay: 10s
       restart_policy:
         condition: on-failure
+        delay: 10s
   zuul-proxy:
     image: bfzheng/zuul-proxy
     networks: 
@@ -78,7 +70,6 @@ services:
       - config-server
       - user-service
       - todo-service
-    # restart: always
     deploy:
       replicas: 1
       restart_policy:
